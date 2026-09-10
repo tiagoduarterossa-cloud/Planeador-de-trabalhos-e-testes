@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#26324A" />
+<title>Planeador</title>
+<link rel="manifest" href="manifest.json" />
+<link rel="apple-touch-icon" href="icon-192.png" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Planeador" />
+<style>
+  :root {
+    --paper: #FAF6EC;
+    --ink: #26324A;
+    --rule: #DCD3BE;
+    --muted: #8A8371;
+    --card-border: #EAE3D3;
+    --urgent: #B54B3E;
+    --soon: #C99A2E;
+    --safe: #3F7D6B;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    padding: max(28px, env(safe-area-inset-top)) 18px 60px;
+  }
+  .wrap { max-width: 640px; margin: 0 auto; }
+  h1 {
+    font-family: Georgia, "Iowan Old Style", serif;
+    font-size: 32px;
+    font-weight: 400;
+    margin: 0;
+    letter-spacing: -0.01em;
+  }
+  .subtitle { margin: 4px 0 0; color: var(--muted); font-size: 14px; }
+  .divider {
+    height: 1px;
+    margin-top: 14px;
+    background: repeating-linear-gradient(90deg, var(--rule) 0, var(--rule) 6px, transparent 6px, transparent 10px);
+  }
+  .chips { display: flex; gap: 8px; flex-wrap: wrap; margin: 18px 0; }
+  .chip {
+    border: 1px solid var(--rule);
+    background: transparent;
+    color: var(--muted);
+    border-radius: 20px;
+    padding: 5px 14px;
+    font-size: 13px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .chip.active { border-color: var(--ink); background: var(--ink); color: var(--paper); }
+  .empty { text-align: center; padding: 48px 20px; color: #8A8371; font-size: 14px; }
+  .list { display: flex; flex-direction: column; gap: 10px; }
+  .task {
+    display: flex; align-items: center; gap: 12px;
+    background: #fff; border: 1px solid var(--card-border);
+    border-left: 4px solid; border-radius: 4px; padding: 12px 14px;
+  }
+  .dot-btn {
+    width: 22px; height: 22px; border-radius: 50%;
+    border: 1.5px solid #C7BFA8; background: transparent; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 0;
+  }
+  .task-title { font-size: 15px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .task-meta { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+  .task-due { font-size: 12.5px; font-weight: 600; white-space: nowrap; flex-shrink: 0; }
+  .del-btn { background: transparent; border: none; cursor: pointer; color: #C7BFA8; flex-shrink: 0; padding: 2px; }
+  .task-body { flex: 1; min-width: 0; }
+  details { margin-top: 22px; }
+  summary { cursor: pointer; font-size: 13px; color: var(--muted); }
+  .done-row { display: flex; align-items: center; gap: 10px; padding: 8px 12px; color: #B0A98F; font-size: 13.5px; text-decoration: line-through; }
+  .add-btn {
+    width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;
+    background: var(--ink); color: var(--paper); border: none; border-radius: 6px;
+    padding: 12px; font-size: 14.5px; font-weight: 500; cursor: pointer; margin-top: 24px; font-family: inherit;
+  }
+  .form-card { background: #fff; border: 1px solid var(--card-border); border-radius: 6px; padding: 16px; margin-top: 24px; }
+  .form-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-size: 14px; font-weight: 600; }
+  .form-head button { background: transparent; border: none; cursor: pointer; color: var(--muted); font-size: 16px; }
+  .field { display: flex; flex-direction: column; gap: 10px; }
+  input, select {
+    border: 1px solid var(--rule); border-radius: 5px; padding: 9px 10px; font-size: 14px;
+    font-family: inherit; color: var(--ink); background: #FDFBF5; outline: none; width: 100%;
+  }
+  .row2 { display: flex; gap: 8px; }
+  .row2 > * { flex: 1; }
+  .save-btn {
+    margin-top: 4px; background: var(--safe); color: #fff; border: none; border-radius: 5px;
+    padding: 10px; font-size: 14px; font-weight: 500; cursor: pointer; font-family: inherit;
+  }
+  .save-btn:disabled { background: var(--rule); cursor: default; }
+  .banner { background: #F5E4E0; color: #8A3B2E; padding: 8px 12px; border-radius: 6px; font-size: 13px; margin-bottom: 14px; }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div>
+      <h1>Planeador</h1>
+      <p class="subtitle">Trabalhos e testes, por ordem de prazo</p>
+      <div class="divider"></div>
+    </div>
+
+    <div id="offlineBanner" class="banner" style="display:none;">Sem ligação — a mostrar dados guardados no telemóvel.</div>
+
+    <div id="chips" class="chips"></div>
+    <div id="emptyState" class="empty" style="display:none;">Sem nada pendente. Junta o primeiro trabalho ou teste abaixo.</div>
+    <div id="list" class="list"></div>
+
+    <details id="doneDetails" style="display:none;">
+      <summary id="doneSummary">Concluídos</summary>
+      <div id="doneList" style="display:flex;flex-direction:column;gap:6px;margin-top:10px;"></div>
+    </details>
+
+    <button id="addBtn" class="add-btn">+ Adicionar trabalho ou teste</button>
+
+    <div id="formCard" class="form-card" style="display:none;">
+      <div class="form-head">
+        <span>Novo item</span>
+        <button id="closeForm">✕</button>
+      </div>
+      <div class="field">
+        <input id="fTitle" placeholder="Título (ex: Trabalho de Físico-Química)" />
+        <input id="fSubject" placeholder="Disciplina (ex: Matemática)" />
+        <div class="row2">
+          <select id="fType">
+            <option value="trabalho">Trabalho</option>
+            <option value="teste">Teste</option>
+          </select>
+          <select id="fPriority">
+            <option value="baixa">Prioridade baixa</option>
+            <option value="media" selected>Prioridade média</option>
+            <option value="alta">Prioridade alta</option>
+          </select>
+        </div>
+        <input id="fDate" type="date" />
+        <button id="saveBtn" class="save-btn" disabled>Guardar</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+const SUBJECT_COLORS = ["#4C6B8A","#8A4C6B","#4C8A6E","#8A6B4C","#7A5C8A","#3F7D8A"];
+const STORAGE_KEY = "planeador-tasks";
+
+let tasks = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+let filterSubject = "Todas";
+
+function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks)); render(); }
+
+function knownSubjects() { return [...new Set(tasks.map(t => t.subject))]; }
+function colorForSubject(subject) {
+  const known = knownSubjects();
+  const idx = known.indexOf(subject);
+  return SUBJECT_COLORS[(idx >= 0 ? idx : known.length) % SUBJECT_COLORS.length];
+}
+function daysUntil(dateStr) {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const due = new Date(dateStr + "T00:00:00");
+  return Math.round((due - today) / 86400000);
+}
+function formatDue(dateStr) {
+  const d = daysUntil(dateStr);
+  if (d < 0) return `Atrasado ${Math.abs(d)}d`;
+  if (d === 0) return "Hoje";
+  if (d === 1) return "Amanhã";
+  return `Em ${d} dias`;
+}
+function urgencyColor(dateStr) {
+  const d = daysUntil(dateStr);
+  if (d <= 1) return "#B54B3E";
+  if (d <= 4) return "#C99A2E";
+  return "#3F7D6B";
+}
+
+function render() {
+  const chips = document.getElementById("chips");
+  const known = knownSubjects();
+  chips.innerHTML = "";
+  if (known.length > 0) {
+    ["Todas", ...known].forEach(s => {
+      const b = document.createElement("button");
+      b.className = "chip" + (filterSubject === s ? " active" : "");
+      b.textContent = s;
+      b.onclick = () => { filterSubject = s; render(); };
+      chips.appendChild(b);
+    });
+  }
+
+  const visible = tasks.filter(t => !t.done && (filterSubject === "Todas" || t.subject === filterSubject))
+                        .sort((a,b) => a.dueDate.localeCompare(b.dueDate));
+  const list = document.getElementById("list");
+  list.innerHTML = "";
+  document.getElementById("emptyState").style.display = (tasks.length === 0) ? "block" : "none";
+
+  visible.forEach(t => {
+    const color = colorForSubject(t.subject);
+    const uColor = urgencyColor(t.dueDate);
+    const row = document.createElement("div");
+    row.className = "task";
+    row.style.borderLeftColor = color;
+    row.innerHTML = `
+      <button class="dot-btn" data-id="${t.id}" data-action="toggle">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#C7BFA8" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+      </button>
+      <div class="task-body">
+        <div class="task-title">${escapeHtml(t.title)}</div>
+        <div class="task-meta">
+          <span style="color:${color}">${escapeHtml(t.subject)}</span> ·
+          <span>${t.type === "teste" ? "Teste" : "Trabalho"}</span>
+          ${t.priority === "alta" ? ' · <span style="color:#B54B3E">prioridade alta</span>' : ""}
+        </div>
+      </div>
+      <div class="task-due" style="color:${uColor}">${formatDue(t.dueDate)}</div>
+      <button class="del-btn" data-id="${t.id}" data-action="delete">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+      </button>
+    `;
+    list.appendChild(row);
+  });
+
+  const done = tasks.filter(t => t.done).sort((a,b) => b.dueDate.localeCompare(a.dueDate));
+  const doneDetails = document.getElementById("doneDetails");
+  doneDetails.style.display = done.length > 0 ? "block" : "none";
+  document.getElementById("doneSummary").textContent = `Concluídos (${done.length})`;
+  const doneList = document.getElementById("doneList");
+  doneList.innerHTML = "";
+  done.forEach(t => {
+    const row = document.createElement("div");
+    row.className = "done-row";
+    row.innerHTML = `
+      <button class="dot-btn" data-id="${t.id}" data-action="toggle" style="border:none;background:#3F7D6B;">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+      </button>
+      <span style="flex:1;">${escapeHtml(t.title)}</span>
+      <button class="del-btn" data-id="${t.id}" data-action="delete">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+      </button>
+    `;
+    doneList.appendChild(row);
+  });
+
+  document.querySelectorAll("[data-action]").forEach(el => {
+    el.onclick = () => {
+      const id = el.dataset.id, action = el.dataset.action;
+      if (action === "toggle") tasks = tasks.map(t => t.id === id ? {...t, done: !t.done} : t);
+      if (action === "delete") tasks = tasks.filter(t => t.id !== id);
+      save();
+    };
+  });
+}
+
+function escapeHtml(s) {
+  return s.replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+
+// Formulário
+const formCard = document.getElementById("formCard");
+const addBtn = document.getElementById("addBtn");
+const fTitle = document.getElementById("fTitle");
+const fSubject = document.getElementById("fSubject");
+const fType = document.getElementById("fType");
+const fPriority = document.getElementById("fPriority");
+const fDate = document.getElementById("fDate");
+const saveBtn = document.getElementById("saveBtn");
+
+function checkValid() {
+  saveBtn.disabled = !(fTitle.value.trim() && fSubject.value.trim() && fDate.value);
+}
+[fTitle, fSubject, fDate].forEach(el => el.addEventListener("input", checkValid));
+
+addBtn.onclick = () => { formCard.style.display = "block"; addBtn.style.display = "none"; };
+document.getElementById("closeForm").onclick = closeForm;
+function closeForm() {
+  formCard.style.display = "none"; addBtn.style.display = "flex";
+  fTitle.value = ""; fSubject.value = ""; fType.value = "trabalho"; fPriority.value = "media"; fDate.value = "";
+  checkValid();
+}
+saveBtn.onclick = () => {
+  if (saveBtn.disabled) return;
+  tasks.push({
+    id: Date.now().toString(),
+    title: fTitle.value.trim(),
+    subject: fSubject.value.trim(),
+    type: fType.value,
+    dueDate: fDate.value,
+    priority: fPriority.value,
+    done: false
+  });
+  closeForm();
+  save();
+};
+
+window.addEventListener("online", () => document.getElementById("offlineBanner").style.display = "none");
+window.addEventListener("offline", () => document.getElementById("offlineBanner").style.display = "block");
+if (!navigator.onLine) document.getElementById("offlineBanner").style.display = "block";
+
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
+}
+
+render();
+</script>
+</body>
+</html>
