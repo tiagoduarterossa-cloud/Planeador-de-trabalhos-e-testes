@@ -198,7 +198,7 @@ function syncTaskRemote(task) {
 function deleteTaskRemote(id) {
   supabaseRequest(`tasks?id=eq.${id}`, { method: "DELETE" });
 }
-</script>
+
 const SUBJECT_COLORS = ["#4C6B8A","#8A4C6B","#4C8A6E","#8A6B4C","#7A5C8A","#3F7D8A"];
 const STORAGE_KEY = "planeador-tasks";
 
