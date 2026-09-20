@@ -426,6 +426,19 @@
       <button id="loginBtn" class="login-btn">Entrar</button>
       <div id="loginError" class="login-error" style="display:none;"></div>
       <button id="toggleSignupBtn" class="logout-btn" style="margin-top:16px;">Ainda não tens conta? Criar conta</button>
+      <button id="forgotPasswordBtn" class="logout-btn" style="margin-top:8px;">Esqueci-me da password</button>
+    </div>
+  </div>
+
+  <div id="resetScreen" class="login-screen" style="display:none;">
+    <div class="login-card">
+      <h1>Nova password</h1>
+      <p class="subtitle">Define uma password nova para a tua conta</p>
+      <div class="login-field">
+        <input id="resetPassword" type="password" placeholder="Nova password" autocomplete="new-password" />
+      </div>
+      <button id="resetSaveBtn" class="login-btn">Guardar nova password</button>
+      <div id="resetError" class="login-error" style="display:none;"></div>
     </div>
   </div>
 
@@ -500,7 +513,7 @@
 
       <div id="formCard" class="form-card" style="display:none;">
         <div class="form-head">
-          <span>Novo item</span>
+          <span id="formTitle">Novo item</span>
           <button id="closeForm">✕</button>
         </div>
       <div class="field">
@@ -612,7 +625,8 @@
     <div id="tdAttachmentRow" class="task-detail-attachment" style="display:none;">
       <button id="tdAttachmentBtn">📎 <span id="tdAttachmentName"></span></button>
     </div>
-    <a id="tdGoogleBtn" href="#" class="google-connect-btn" style="margin-top:16px;">📅 Adicionar ao Google Agenda</a>
+    <button id="tdEditBtn" class="google-connect-btn" style="margin-top:16px; display:none;">✏️ Editar</button>
+    <a id="tdGoogleBtn" href="#" class="google-connect-btn" style="margin-top:8px;">📅 Adicionar ao Google Agenda</a>
   </div>
 
 <script>
@@ -712,8 +726,8 @@ async function supabaseRequest(path, options = {}) {
   }
 }
 
-function syncTaskRemote(task) {
-  return supabaseRequest("tasks?on_conflict=id", {
+async function syncTaskRemote(task) {
+  const res = await supabaseRequest("tasks?on_conflict=id", {
     method: "POST",
     prefer: "resolution=merge-duplicates",
     body: JSON.stringify([{
@@ -723,9 +737,23 @@ function syncTaskRemote(task) {
       attachment_path: task.attachmentPath || null, attachment_name: task.attachmentName || null,
     }]),
   });
+  if (res && res.ok) task._synced = true; // confirma que este item já existe no servidor
+  return res;
 }
-function deleteTaskRemote(id) {
-  supabaseRequest(`tasks?id=eq.${id}`, { method: "DELETE" });
+
+// Apagar diretamente pode falhar sem ligação — guarda o pedido e tenta
+// de novo no próximo syncFromRemote, para o item não "ressuscitar" ao sincronizar.
+const PENDING_DELETES_KEY = "planeador-pending-deletes";
+function getPendingDeletes() {
+  try { return JSON.parse(localStorage.getItem(PENDING_DELETES_KEY) || "[]"); } catch (e) { return []; }
+}
+function setPendingDeletes(list) { localStorage.setItem(PENDING_DELETES_KEY, JSON.stringify(list)); }
+
+async function deleteTaskRemote(id) {
+  const pending = getPendingDeletes();
+  if (!pending.includes(id)) setPendingDeletes([...pending, id]);
+  const res = await supabaseRequest(`tasks?id=eq.${id}`, { method: "DELETE" });
+  if (res && res.ok) setPendingDeletes(getPendingDeletes().filter(x => x !== id));
 }
 
 // -- Modal de detalhe do trabalho/evento --
@@ -767,6 +795,15 @@ function openTaskDetail(id) {
   }
 
   document.getElementById("tdGoogleBtn").href = googleCalendarUrl(t);
+
+  const isForeign = t.userId && t.userId !== getUserId();
+  const editBtn = document.getElementById("tdEditBtn");
+  if (!isForeign && t.type !== "estudo") {
+    editBtn.style.display = "flex";
+    editBtn.onclick = () => { closeTaskDetail(); openEditTask(t.id); };
+  } else {
+    editBtn.style.display = "none";
+  }
 
   taskDetailOverlay.style.display = "block";
   taskDetailModal.classList.add("open");
@@ -1332,8 +1369,37 @@ fAttachment.addEventListener("change", () => {
   fAttachmentName.textContent = f ? `📎 ${f.name}` : "";
 });
 
+let editingTaskId = null;
+
+function openEditTask(id) {
+  const t = tasks.find(x => x.id === id);
+  if (!t) return;
+  editingTaskId = id;
+  formCard.style.display = "block";
+  addBtn.style.display = "none";
+  document.getElementById("formTitle").textContent = "Editar item";
+  fAttachmentBtn.style.display = "none";
+  document.getElementById("fShareEmail").style.display = "none";
+
+  fTitle.value = t.title;
+  fType.value = t.type;
+  const isEvent = fType.value === "evento";
+  fSubject.style.display = isEvent ? "none" : "block";
+  fCategory.style.display = isEvent ? "block" : "none";
+  if (isEvent) fCategory.value = t.subject; else fSubject.value = t.subject;
+  fPriority.value = t.priority;
+  fDate.value = t.dueDate;
+  fTime.value = t.dueTime || "";
+  checkValid();
+  fTitle.focus();
+}
+
 function closeForm() {
   formCard.style.display = "none"; addBtn.style.display = "flex";
+  editingTaskId = null;
+  document.getElementById("formTitle").textContent = "Novo item";
+  fAttachmentBtn.style.display = "block";
+  document.getElementById("fShareEmail").style.display = "block";
   fTitle.value = ""; fSubject.value = ""; fType.value = "trabalho"; fPriority.value = "media"; fDate.value = ""; fTime.value = "";
   fSubject.style.display = "block"; fCategory.style.display = "none";
   fAttachment.value = ""; fAttachmentName.style.display = "none"; fAttachmentName.textContent = "";
@@ -1373,6 +1439,29 @@ function createStudyReminders(task) {
 
 saveBtn.onclick = async () => {
   if (saveBtn.disabled) return;
+
+  if (editingTaskId) {
+    const t = tasks.find(x => x.id === editingTaskId);
+    if (!t) { closeForm(); return; }
+    const dateChanged = t.dueDate !== fDate.value;
+    t.title = fTitle.value.trim();
+    t.subject = currentSubjectValue();
+    t.type = fType.value;
+    t.dueDate = fDate.value;
+    t.dueTime = fTime.value || null;
+    t.priority = fPriority.value;
+    await syncTaskRemote(t);
+    if (dateChanged && (t.type === "trabalho" || t.type === "teste")) {
+      const oldReminders = tasks.filter(x => x.parentId === t.id);
+      tasks = tasks.filter(x => x.parentId !== t.id);
+      oldReminders.forEach(r => deleteTaskRemote(r.id));
+      createStudyReminders(t);
+    }
+    closeForm();
+    save();
+    return;
+  }
+
   const newTask = {
     id: Date.now().toString(),
     title: fTitle.value.trim(),
@@ -1552,22 +1641,53 @@ function initApp() {
 async function syncFromRemote() {
   if (!supabaseReady) return;
   try {
+    // Tenta primeiro concluir apagamentos que ficaram por confirmar (ex: sem ligação).
+    for (const id of getPendingDeletes()) {
+      await deleteTaskRemote(id);
+    }
+
     const res = await supabaseRequest("tasks?select=*");
     if (!res || !res.ok) return;
     const remoteTasks = await res.json();
-    const localIds = new Set(tasks.map(t => t.id));
+    const stillPending = new Set(getPendingDeletes());
+    const remoteById = new Map(remoteTasks.filter(rt => !stillPending.has(rt.id)).map(rt => [rt.id, rt]));
     let changed = false;
-    remoteTasks.forEach(rt => {
+
+    // Atualiza com o que está no servidor (ex: marcado como feito noutro
+    // aparelho, ou editado) e remove o que já não existe lá — mas só quando
+    // já sabíamos que estava sincronizado, para nunca perder algo criado
+    // offline que ainda não chegou ao servidor.
+    tasks = tasks.filter(t => {
+      const rt = remoteById.get(t.id);
+      if (rt) {
+        Object.assign(t, {
+          title: rt.title, subject: rt.subject, type: rt.type,
+          dueDate: rt.due_date, dueTime: rt.due_time || null, priority: rt.priority, done: rt.done,
+          parentId: rt.parent_id || null, userId: rt.user_id || null,
+          attachmentPath: rt.attachment_path || null, attachmentName: rt.attachment_name || null,
+        });
+        t._synced = true;
+        return true;
+      }
+      const isForeign = t.userId && t.userId !== getUserId();
+      if (t._synced || isForeign) { changed = true; return false; }
+      return true;
+    });
+
+    const localIds = new Set(tasks.map(t => t.id));
+    remoteById.forEach(rt => {
       if (!localIds.has(rt.id)) {
         tasks.push({
           id: rt.id, title: rt.title, subject: rt.subject, type: rt.type,
           dueDate: rt.due_date, dueTime: rt.due_time || null, priority: rt.priority, done: rt.done,
           parentId: rt.parent_id || null, userId: rt.user_id || null,
           attachmentPath: rt.attachment_path || null, attachmentName: rt.attachment_name || null,
+          _synced: true,
         });
         changed = true;
       }
     });
+
     if (changed) save(); else render();
   } catch (e) {}
 }
@@ -1657,7 +1777,70 @@ logoutBtn.addEventListener("click", () => {
   showLogin();
 });
 
+// -- Recuperação de password --
+const resetScreen = document.getElementById("resetScreen");
+const resetPassword = document.getElementById("resetPassword");
+const resetSaveBtn = document.getElementById("resetSaveBtn");
+const resetError = document.getElementById("resetError");
+let recoveryAccessToken = null;
+
+function checkRecoveryRedirect() {
+  const hash = window.location.hash;
+  if (!hash || !hash.includes("type=recovery")) return false;
+  const params = new URLSearchParams(hash.slice(1));
+  const token = params.get("access_token");
+  if (!token) return false;
+  recoveryAccessToken = token;
+  loginScreen.style.display = "none";
+  resetScreen.style.display = "flex";
+  return true;
+}
+
+resetSaveBtn.addEventListener("click", async () => {
+  const password = resetPassword.value;
+  resetError.style.display = "none";
+  if (!password || password.length < 6) {
+    resetError.style.display = "block";
+    resetError.textContent = "A password precisa de pelo menos 6 caracteres.";
+    return;
+  }
+  resetSaveBtn.disabled = true;
+  try {
+    const res = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+      method: "PUT",
+      headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${recoveryAccessToken}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ password }),
+    });
+    if (!res.ok) throw new Error("Não foi possível guardar a nova password — o link pode ter expirado.");
+    history.replaceState(null, "", window.location.pathname + window.location.search);
+    resetScreen.style.display = "none";
+    resetPassword.value = "";
+    showLogin("Password alterada! Já podes iniciar sessão.");
+  } catch (e) {
+    resetError.style.display = "block";
+    resetError.textContent = e.message;
+  }
+  resetSaveBtn.disabled = false;
+});
+
+document.getElementById("forgotPasswordBtn").addEventListener("click", async () => {
+  const email = prompt("Introduz o teu email para receberes o link de recuperação de password:");
+  if (!email) return;
+  loginError.style.display = "block";
+  loginError.textContent = "A enviar...";
+  try {
+    await fetch(`${SUPABASE_URL}/auth/v1/recover`, {
+      method: "POST",
+      headers: { apikey: SUPABASE_ANON_KEY, "Content-Type": "application/json" },
+      body: JSON.stringify({ email: email.trim() }),
+    });
+  } catch (e) {}
+  // Mensagem igual quer o email exista ou não, para não revelar que contas existem.
+  loginError.textContent = "Se esse email tiver conta, vais receber uma mensagem com um link para definires nova password.";
+});
+
 (async function boot() {
+  if (checkRecoveryRedirect()) return;
   if (!supabaseReady) { showApp(); return; }
   const session = await ensureSession();
   if (session) showApp(); else showLogin();
@@ -1673,7 +1856,10 @@ const sidebarClose = document.getElementById("sidebarClose");
 function updateAccountUI() {
   const session = getSession();
   const email = session && session.user ? session.user.email : "";
-  accountEmail.textContent = email;
+  // Usa getElementById em vez da constante "accountEmail" (declarada mais abaixo):
+  // sem o Supabase configurado, showApp() chama isto logo no arranque, antes de
+  // essa constante estar inicializada, e isso rebentava com um erro de TDZ.
+  document.getElementById("accountEmail").textContent = email;
 }
 
 function openSidebar() {
@@ -1704,6 +1890,11 @@ document.getElementById("sidebarScheduleBtn").addEventListener("click", () => {
 // -- Google Agenda --
 // Preenche com o Client ID criado no Google Cloud Console (ver instruções à parte)
 const GOOGLE_CLIENT_ID = "COLA_AQUI_O_TEU_GOOGLE_CLIENT_ID.apps.googleusercontent.com";
+// Enquanto não substituíres o valor acima por um Client ID real (Google Cloud Console),
+// a ligação automática à Google Agenda fica escondida — evita um botão que falha sempre.
+// Os botões "Adicionar ao Google Agenda" em cada item continuam a funcionar sem isto,
+// porque usam um link simples que não precisa de autenticação.
+const GOOGLE_CONFIGURED = !GOOGLE_CLIENT_ID.startsWith("COLA_AQUI");
 const GOOGLE_SCOPE = "https://www.googleapis.com/auth/calendar.events";
 const GCAL_TOKEN_KEY = "planeador-gcal-token";
 const googleConnectBtn = document.getElementById("googleConnectBtn");
@@ -1727,7 +1918,7 @@ function updateGoogleBtnUI() {
 }
 
 function initGoogleClient() {
-  if (!window.google || !google.accounts || !google.accounts.oauth2 || gcalTokenClient) return;
+  if (!GOOGLE_CONFIGURED || !window.google || !google.accounts || !google.accounts.oauth2 || gcalTokenClient) return;
   gcalTokenClient = google.accounts.oauth2.initTokenClient({
     client_id: GOOGLE_CLIENT_ID,
     scope: GOOGLE_SCOPE,
@@ -1793,7 +1984,11 @@ async function addTaskToGoogleCalendar(t) {
   }
 }
 
-window.addEventListener("load", () => setTimeout(() => { initGoogleClient(); updateGoogleBtnUI(); }, 500));
+if (!GOOGLE_CONFIGURED) {
+  googleConnectBtn.style.display = "none";
+} else {
+  window.addEventListener("load", () => setTimeout(() => { initGoogleClient(); updateGoogleBtnUI(); }, 500));
+}
 
 // -- Partilha --
 async function shareTask(taskId) {
