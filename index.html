@@ -71,7 +71,7 @@
     border: none; border-bottom: 2px solid transparent; background: transparent;
     color: var(--muted); padding: 4px 0 8px; font-size: 13.5px; cursor: pointer; font-family: inherit;
   }
-  .chip.active { border-color: var(--ribbon); color: var(--ink); font-weight: 600; }
+  .chip.active { border-color: var(--ribbon); color: var(--ink); font-weight: 500; }
   .empty { text-align: center; padding: 48px 20px; color: #8B8577; font-size: 14px; }
   .list { display: flex; flex-direction: column; gap: 1px; }
   .task {
@@ -86,9 +86,9 @@
     border: 1.5px solid var(--muted); background: transparent; flex-shrink: 0; color: var(--muted);
     display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 0;
   }
-  .task-title { font-size: 15px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .task-title { font-size: 15px; font-weight: 400; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .task-meta { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
-  .task-due { font-size: 12.5px; font-weight: 600; white-space: nowrap; flex-shrink: 0; }
+  .task-due { font-size: 12.5px; font-weight: 500; white-space: nowrap; flex-shrink: 0; }
   .del-btn { background: transparent; border: none; cursor: pointer; color: var(--muted); flex-shrink: 0; padding: 2px; }
   .cal-add-btn { color: var(--muted); flex-shrink: 0; padding: 2px; display: flex; }
   .task-body { flex: 1; min-width: 0; }
@@ -98,10 +98,10 @@
   .add-btn {
     width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;
     background: var(--ink); color: var(--paper); border: none; border-radius: 6px;
-    padding: 12px; font-size: 14.5px; font-weight: 500; cursor: pointer; margin-top: 24px; font-family: inherit;
+    padding: 12px; font-size: 14.5px; font-weight: 400; cursor: pointer; margin-top: 24px; font-family: inherit;
   }
   .form-card { background: var(--surface); border: 1px solid var(--card-border); border-radius: 6px; padding: 16px; margin-top: 24px; }
-  .form-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-size: 14px; font-weight: 600; }
+  .form-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-size: 14px; font-weight: 500; }
   .form-head button { background: transparent; border: none; cursor: pointer; color: var(--muted); font-size: 16px; }
   .field { display: flex; flex-direction: column; gap: 10px; }
   input, select {
@@ -115,7 +115,7 @@
   .row2 > * { flex: 1; }
   .save-btn {
     margin-top: 4px; background: var(--safe); color: #fff; border: none; border-radius: 5px;
-    padding: 10px; font-size: 14px; font-weight: 500; cursor: pointer; font-family: inherit;
+    padding: 10px; font-size: 14px; font-weight: 400; cursor: pointer; font-family: inherit;
   }
   .save-btn:disabled { background: var(--rule); cursor: default; }
   .banner { background: var(--banner-warn-bg); color: var(--banner-warn-text); padding: 8px 12px; border-radius: 6px; font-size: 13px; margin-bottom: 14px; }
@@ -133,7 +133,7 @@
   .account-btn {
     display: flex; align-items: center; justify-content: center;
     width: 34px; height: 34px; border-radius: 50%; border: none;
-    background: var(--ribbon); color: #fff; font-size: 14px; font-weight: 700;
+    background: var(--ribbon); color: #fff; font-size: 14px; font-weight: 600;
     cursor: pointer; font-family: inherit; text-transform: uppercase;
   }
   .account-menu {
@@ -152,14 +152,14 @@
   .google-connect-btn {
     display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%;
     background: var(--surface); color: var(--ink); border: none; border-radius: 6px;
-    padding: 9px; font-size: 13px; font-weight: 500; cursor: pointer; font-family: inherit; margin-top: 14px;
+    padding: 9px; font-size: 13px; font-weight: 400; cursor: pointer; font-family: inherit; margin-top: 14px;
   }
   .google-connect-btn.connected { background: #EAF3EF; color: var(--safe); }
   .info-banner { background: var(--banner-info-bg); color: var(--banner-info-text); padding: 8px 12px; border-radius: 6px; font-size: 12.5px; margin-bottom: 14px; }
   .tabs { display: flex; gap: 4px; background: var(--surface-alt); border-radius: 8px; padding: 4px; margin-bottom: 18px; }
   .tab-btn {
     flex: 1; border: none; background: transparent; padding: 8px; border-radius: 6px;
-    font-size: 14px; font-weight: 500; color: var(--muted); cursor: pointer; font-family: inherit;
+    font-size: 14px; font-weight: 400; color: var(--muted); cursor: pointer; font-family: inherit;
   }
   .tab-btn.active { background: var(--surface); color: var(--ink); }
   .file-row {
@@ -167,14 +167,14 @@
     border: 1px solid var(--card-border); border-radius: 4px; padding: 12px 14px; margin-bottom: 10px;
   }
   .file-icon { font-size: 20px; flex-shrink: 0; }
-  .file-name { font-size: 14.5px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .file-name { font-size: 14.5px; font-weight: 400; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .file-meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
   .file-actions { display: flex; gap: 10px; flex-shrink: 0; }
   .file-actions a, .file-actions button { background: transparent; border: none; color: var(--muted); cursor: pointer; padding: 2px; }
   .upload-btn {
     width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;
     background: var(--accent-bg); color: #fff; border: none; border-radius: 6px;
-    padding: 12px; font-size: 14.5px; font-weight: 500; cursor: pointer; margin-top: 8px; font-family: inherit;
+    padding: 12px; font-size: 14.5px; font-weight: 400; cursor: pointer; margin-top: 8px; font-family: inherit;
   }
   .upload-btn:disabled { background: var(--rule); }
   .login-screen {
@@ -186,7 +186,7 @@
   .login-field { display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; }
   .login-btn {
     width: 100%; background: var(--ink); color: var(--paper); border: none; border-radius: 6px;
-    padding: 12px; font-size: 14.5px; font-weight: 500; cursor: pointer; font-family: inherit; margin-top: 4px;
+    padding: 12px; font-size: 14.5px; font-weight: 400; cursor: pointer; font-family: inherit; margin-top: 4px;
   }
   .login-btn:disabled { background: var(--rule); }
   .login-error { color: var(--urgent); font-size: 13px; margin-top: 10px; }
@@ -206,7 +206,7 @@
   }
   .calendar-header {
     display: flex; align-items: center; justify-content: space-between;
-    font-size: 15px; font-weight: 700; margin-bottom: 14px; padding: 0 4px; color: #fff;
+    font-size: 15px; font-weight: 600; margin-bottom: 14px; padding: 0 4px; color: #fff;
   }
   .cal-nav-btn {
     background: transparent; border: none; font-size: 20px; color: #fff;
@@ -215,15 +215,15 @@
   .calendar-weekdays, .calendar-grid {
     display: grid; grid-template-columns: repeat(7, 1fr); text-align: center;
   }
-  .calendar-weekdays span { font-size: 12px; font-weight: 700; color: #fff; opacity: 0.6; padding-bottom: 10px; }
+  .calendar-weekdays span { font-size: 12px; font-weight: 600; color: #fff; opacity: 0.6; padding-bottom: 10px; }
   .calendar-grid { row-gap: 6px; }
   .cal-day {
     position: relative; aspect-ratio: 1; margin: 0 auto; width: 34px;
     display: flex; align-items: center; justify-content: center;
-    font-size: 13px; font-weight: 700; border-radius: 50%;
+    font-size: 13px; font-weight: 600; border-radius: 50%;
     cursor: pointer; color: #fff; background: transparent; border: none; font-family: inherit;
   }
-  .cal-day.other-month { color: #4A5578; font-weight: 500; cursor: default; }
+  .cal-day.other-month { color: #4A5578; font-weight: 400; cursor: default; }
   .cal-day.has-task { color: #fff; }
   .cal-day.today { box-shadow: inset 0 0 0 2px #fff; }
   .cal-day.selected { box-shadow: inset 0 0 0 2px #fff; }
@@ -283,7 +283,7 @@
   .attach-name { font-size: 12.5px; color: var(--safe); padding: 4px 2px; }
   .task-attach-btn { background: transparent; border: none; cursor: pointer; color: var(--muted); flex-shrink: 0; padding: 2px; display: flex; }
   .schedule-day-label {
-    font-size: 13px; font-weight: 600; color: var(--muted); margin: 18px 0 8px; text-transform: uppercase; letter-spacing: 0.03em;
+    font-size: 13px; font-weight: 500; color: var(--muted); margin: 18px 0 8px; text-transform: uppercase; letter-spacing: 0.03em;
   }
   .schedule-day-label:first-child { margin-top: 0; }
   .schedule-row {
@@ -291,7 +291,7 @@
     border: 1px solid var(--card-border); border-radius: 4px; padding: 10px 14px; margin-bottom: 8px;
   }
   .schedule-time { font-size: 12.5px; color: var(--muted); min-width: 92px; }
-  .schedule-subject { font-size: 14.5px; font-weight: 500; flex: 1; }
+  .schedule-subject { font-size: 14.5px; font-weight: 400; flex: 1; }
 
   .task-detail-modal {
     position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%) scale(0.96);
@@ -301,7 +301,7 @@
   }
   .task-detail-modal.open { opacity: 1; pointer-events: auto; transform: translate(-50%, -50%) scale(1); }
   .task-detail-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
-  .task-detail-subject { font-size: 13px; font-weight: 600; }
+  .task-detail-subject { font-size: 13px; font-weight: 500; }
   .task-detail-head button { background: transparent; border: none; font-size: 16px; color: var(--muted); cursor: pointer; }
   .task-detail-title { font-family: Georgia, serif; font-size: 20px; font-weight: 400; margin: 4px 0 12px; color: var(--ink); }
   .task-detail-meta { font-size: 13.5px; color: var(--muted); line-height: 1.7; }
@@ -317,7 +317,7 @@
     border: 1px solid var(--card-border); text-align: center; padding: 0;
   }
   .schedule-grid th {
-    font-size: 12px; font-weight: 600; color: var(--muted); padding: 8px 4px; background: var(--surface-alt);
+    font-size: 12px; font-weight: 500; color: var(--muted); padding: 8px 4px; background: var(--surface-alt);
   }
   .schedule-time-cell {
     font-size: 11px; color: var(--muted); padding: 6px 4px; background: var(--surface-alt);
@@ -327,7 +327,7 @@
     font-size: 12.5px; color: var(--ink); padding: 10px 4px; cursor: pointer; background: var(--surface);
     min-width: 84px; word-break: break-word;
   }
-  .schedule-subject-cell.filled { font-weight: 600; }
+  .schedule-subject-cell.filled { font-weight: 500; }
   .schedule-subject-cell:empty::before { content: "+"; color: var(--rule); }
   .schedule-subject-cell.lunch { background: var(--surface-alt); color: var(--muted); font-style: italic; }
 
