@@ -1638,10 +1638,13 @@ function checkAndNotify(force) {
 }
 
 function initApp() {
-  syncFromRemote();
+  render(); // mostra já o que estiver guardado no telemóvel, para não ficar em branco
   updateBellUI();
-  render();
   checkAndNotify(false);
+  // Volta a desenhar a lista assim que a sincronização terminar — mesmo que
+  // falhe silenciosamente (rede instável), para nunca ficar presa no estado
+  // inicial à espera de um clique manual num filtro.
+  syncFromRemote().then(render).catch(render);
   if (remindersEnabled() && Notification.permission === "granted") {
     setTimeout(subscribeToPush, 1000); // dá tempo ao service worker para registar
   }
